@@ -1,4 +1,7 @@
 import re
+import operator
+import random
+import copy 
 
 class Sudoku:
     original = []
@@ -7,13 +10,14 @@ class Sudoku:
     #Assumptions: Grid will always be 9x9
     grid = []
     words = []
+    orientations = ['h', 'v']
 
     def init(self, gridpath, wordpath):
         self.init_grid(gridpath)
         self.init_words(wordpath)
 
-        print self.grid
-        print self.words
+        #print self.grid
+        #print self.words
 
     def init_grid(self, gridpath):
         self.grid = []
@@ -42,18 +46,14 @@ class Sudoku:
 
     
 
-    #get heuristic val
-
-
     #ensure unique characters for all rows, columns, blocks
     def check_gridstate_valid(self):
-    	#for all columns
+    	#for all columns + rows
         for x in range(0, 9):
             seen_col = {}
             seen_row = {}
             for y in range(0, 9):
                 if self.grid[x][y] != '_' and self.grid[x][y] in seen_col:
-                    print self.grid[x][y] 
                     return False
                 else:
                     seen_col[self.grid[x][y]] = True
@@ -63,6 +63,7 @@ class Sudoku:
                 else:
                     seen_row[self.grid[y][x]] = True
 
+        #For all blocks
         for x_b in range(0, 3):
             for y_b in range(0, 3):
                 offset_x = x_b * 3
@@ -76,37 +77,87 @@ class Sudoku:
                         if  self.grid[real_x][real_y] != '_' and self.grid[real_x][real_y] in seen_col:
                             return False
                         else:
-                            self.grid[real_y][real_x] = True
+                            seen_b[self.grid[real_y][real_x]] = True
 
         return True
 
 
-    def solved_state(self):
-        return True
+    def solved_state(self, words):
+        if len(words) == 0:
+            return True
+        return False
+
+    def get_possible_placements(self, word, orientation, grid):
+        placements = []
+        for x in range(0, 9 - len(word)):
+            for y in range(0, 9 - len(word)):
+                #at a certain x, y value...
+                valid = True
+                for i, c in enumerate(word):
+                    if orientation == "h":
+                        if grid[x+i][y] != "_" and grid[x+i][y] != "c":
+                            valid = False
+                            break
+                    if orientation == "v":
+                        if grid[x][y+i] != "_" and grid[x][y+i] != "c":
+                            valid = False
+                            break
+                if valid:
+                    placements.append((x, y))
+        return placements
 
 
-    def solve(self):
+    #TODO: get heuristic val
+    def get_heuristic_value(self, word, orientation, x, y, grid):
+        return 1
+
+
+
+    def solve(self, words, grid):
         if not self.check_gridstate_valid():
             print "INVALID"
             return False
-        if self.solved_state():
+        if self.solved_state(words):
             print "Solved!!!!"
+            print grid
             return True
 
+        #map from (word, orientation, x, y) to heuristic value
+        heuristic_vals = {}
         #go through remaining words
-            #for either orientation
+        for word in words:
+            for o in self.orientations:
                 #for all possible spaces
-                    #get + save heuristic val for space
+                for placement in self.get_possible_placements(word, o, grid):
+                    hval = self.get_heuristic_value(word, o, placement[0], placement[1], grid)
+                    heuristic_vals[(word, o, placement[0], placement[1])] = hval
 
-        #sort heuristic vals
-        #go through heuristic vals from best to worst
-            #val = recurse(with updated board)
-            #if val:
-                #return true
+        #sort by heuristic vals
+        sorted_moves = sorted(heuristic_vals.items(), key=operator.itemgetter(1), reverse=True)
+        #go through moves from best to worst
+        for move in sorted_moves:
+            #create updated board
+            new_grid = copy.deepcopy(grid)
+            for i, c in enumerate(move[0][0]):
+                if move[0][1] == 'h':
+                    new_grid[move[0][2] + i][move[0][3]] = c
+                else:    
+                    new_grid[move[0][2]][move[0][3] + i] = c
+
+            #create updated word list
+            new_words = copy.deepcopy(words)
+            new_words.remove(move[0][0])
+
+            success = self.solve(new_words, new_grid)
+            if success:
+                return True
             
-        #return false
+        return False
 
-
+    #helper function called externally
+    def solve_grid(self):
+        if self.solve(self.words, self.grid):
+            print "wahoo!!!!"
 
 
 
