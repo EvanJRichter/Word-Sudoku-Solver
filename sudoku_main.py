@@ -6,7 +6,7 @@ def run_sudoku(gridfile, wordfile):
 
     s.solve()
 
-    
+
     #cost, expanded = m.find(strategy)
     #print '------------------------------'
     #print 'The strategy evaluated was:', strategy
@@ -18,5 +18,6 @@ def run_sudoku(gridfile, wordfile):
     #m.output_file(filename +'_'+ strategy +'.txt')
 
 if __name__ == '__main__':
-    run_sudoku('grid1.txt', 'bank1.txt')
+    run_sudoku('gridtest.txt', 'bank1.txt')
+    #run_sudoku('grid1.txt', 'bank1.txt')
     #run_sudoku('grid2.txt', 'bank2.txt')
