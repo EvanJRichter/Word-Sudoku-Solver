@@ -59,3 +59,29 @@
             if word_y <= y and y <= word_y+len(word) and word_x == x: #off by one maybe? 
                 return True
         return False
+
+
+
+
+
+
+
+
+
+
+    def could_be_placed(self, word, orientation, grid):
+        for x in range(0, 10 - len(word)):
+            for y in range(0, 9):
+                valid = True
+                for i, c in enumerate(word):
+                    if orientation == "h":
+                        if grid[x+i][y] != "_" and grid[x+i][y] != c:
+                            valid = False
+                            break
+                    else:
+                        if grid[y][x+i] != "_" and grid[y][x+i] != c:
+                            valid = False
+                            break
+                if valid:
+                    return True
+        return False
