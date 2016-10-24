@@ -1,29 +1,34 @@
-class Player:
-    self.color = None
-    self.strategy = None
-    self.heuristic = None
-    self.pieces = None
-    self.count = None
+def is_in_bounds(x, y):
+    if x >= 0 and x < 8 and y >= 0 and  y < 8:
+        return True
+    return False
 
-    def Player(self, color, strategy, heuristic):
+class Player:
+    # self.color = None
+    # self.strategy = None
+    # self.heuristic = None
+    # self.pieces = None
+    # self.count = None
+
+    def __init__(self, color, strategy, heuristic):
         self.color = color
         self.strategy = strategy
         self.heuristic = heuristic
         self.count = 16
 
 class Game:
-    self.board = None
-    self.white = None
-    self.black = None
-    self.turn = None
-    self.opponent = None
+    # self.board = None
+    # self.white = None
+    # self.black = None
+    # self.turn = None
+    # self.opponent = None
 
-    def Game(self, sw, sb, hw, hb):
+    def __init__(self, sw, sb, hw, hb):
         self.board = []
         for i in range (0, 8):
-            self.array[i] = []
+            self.board.append([])
             for j in range (0, 8):
-                self.board[i][j] = "-"
+                self.board[i].append("-")
 
         for i in range (0, 8):
             self.board[i][0] = "w"
@@ -33,39 +38,57 @@ class Game:
 
         self.white = Player("w", sw, hw)
         self.black = Player("b", sb, hb)
-        self.turn = white
-        self.opponent = black
+        self.turn = self.white
+        self.opponent = self.black
 
     def play(self):
-        while !is_game_over():
-            move()
-            alternate_turn()
-        print self.board
+        count = 0
+        while not self.is_game_over() or count < 10:
+            self.move()
+            self.alternate_turn()
+            self.print_game()
+            count += 1
         return
 
+    def print_game(self):
+        board = ""
+        for i in range (0, 8):
+            for j in range (0, 8):
+                board += self.board[i][j] + "|"
+            board +=  "\n"
+            board += "_ _ _ _ _ _ _ _"
+            board += "\n"
+        print board
+
     def move(self):
-        move = minmax_decision()
-        self.board = do_move(self.board, move[0], move[1])
+        move = self.minmax_decision()
+        self.do_move(move[0], move[1])
 
     def alternate_turn(self):
-        if self.turn == white:
-            self.turn = black
-            self.opponent = white
+        if self.turn == self.white:
+            self.turn = self.black
+            self.opponent = self.white
         else:
-            self.turn = white
-            self.opponent = black
+            self.turn = self.white
+            self.opponent = self.black
+
+    def touchdown(self):
+        for i in range (0, 8):
+            if self.board[i][0] == "b" or self.board[i][7] == "w":
+                return True
+        return False
 
     def is_game_over(self):
-        if white.count == 0 or black.count == 0 or board.touchdown():
+        if self.white.count == 0 or self.black.count == 0 or self.touchdown():
             return True
         return False
 
-    def get_possible_moves(temp_board):
+    def get_possible_moves(self):
         start = -1
         end = -1
         advance = 0
 
-        if self.turn = white:
+        if self.turn == self.white:
             start = 0
             end = 7
             advance = 1
@@ -78,85 +101,89 @@ class Game:
 
         for i in range (0, 8):
             for j in range (0, 8):
-                if temp_board[i][j] == self.turn.color:
-                    if is_in_bounds(i, j + advance) and temp_board[i][j + advance] == "-":
+                if self.board[i][j] == self.turn.color:
+                    if is_in_bounds(i, j + advance) and self.board[i][j + advance] == "-":
                         locationA = (i, j)
                         locationB = (i, j + advance)
                         possible_moves.append((locationA, locationB))
 
-                    if is_in_bounds(i + 1, j + advance) and temp_board[i + 1][j + advance] != self.turn.color:
+                    if is_in_bounds(i + 1, j + advance) and self.board[i + 1][j + advance] != self.turn.color:
                         locationA = (i, j)
                         locationB = (i + 1, j + advance)
                         possible_moves.append((locationA, locationB))
 
-                    if is_in_bounds(i - 1, j+advance) and temp_board[i - 1][j + advance] != self.turn.color:
+                    if is_in_bounds(i - 1, j+advance) and self.board[i - 1][j + advance] != self.turn.color:
                         locationA = (i, j)
                         locationB = (i - 1, j + advance)
                         possible_moves.append((locationA, locationB))
 
         return possible_moves
 
-    def do_move(board, locationA, locationB):
-        if board[locationB.first][locationB.second] == "w":
-            self
-        prev = board[locationB.first][locationB.second]
-        board[locationB.first][locationB.second] = self.board[locationA.first][locationA.second]
-        board[locationA.first][locationA.second] = "-"
-        return (board, prev)
+    def do_move(self, locationA, locationB):
+        if self.board[locationB[0]][locationB[1]] == "w":
+            self.white.count -= 1
+        if self.board[locationB[0]][locationB[1]] == "b":
+            self.black.count -= 1
+        prev = self.board[locationB[0]][locationB[1]]
+        self.board[locationB[0]][locationB[1]] = self.board[locationA[0]][locationA[1]]
+        self.board[locationA[0]][locationA[1]] = "-"
+        return prev
 
-    def undo_move(board, locationA, locationB, prev):
-        board[locationA.first][locationA.second] = board[locationB.first][locationB.second]
-        board[locationB.first][locationB.second] = prev
-        return board
+    def undo_move(self, locationA, locationB, prev):
+        if prev == "w":
+            self.white.count += 1
+        if prev == "b":
+            self.black.count += 1
+        self.board[locationA[0]][locationA[1]] = self.board[locationB[0]][locationB[1]]
+        self.board[locationB[0]][locationB[1]] = prev
 
     def minmax_decision(self):
-        value, move = max_value(self.board, 0)
+        value, move = self.max_value(0)
         return move
 
-    def max_value(temp_board, level):
+    def max_value(self, level):
         if level == 3:
-            return (evalute_board(temp_board), None)
+            value = self.evaluate_board()
+            return (value, None)
 
-        possible_moves = get_possible_moves(temp_board)
-        if possible_moves is empty:
-            return (evalute_board(temp_board), None)
+        possible_moves = self.get_possible_moves()
+        if not possible_moves:
+            value = self.evaluate_board()
+            return (value, None)
 
         max_value = -float("inf")
         max_move = None
         for move in possible_moves:
-            temp_board, prev = do_move(board, move[0], move[1])
-            value, useless_move = min_value(board, level + 1)
+            prev = self.do_move(move[0], move[1])
+            value, useless_move = self.min_value(level + 1)
             if value >= max_value :
                 max_value = value
                 max_move = move
-            temp_board = undo_move(board, move[0], move[1], prev)
+            self.undo_move(move[0], move[1], prev)
         return max_value, max_move
 
-    def min_value(temp_board, level):
+    def min_value(self, level):
         if level == 3:
-            return (evalute_board(temp_board), None)
+            value = self.evaluate_board()
+            return (value, None)
 
-        possible_moves = get_possible_moves(temp_board)
-        if possible_moves is empty:
-            return (evalute_board(temp_board), None)
+        possible_moves = self.get_possible_moves()
+        if not possible_moves:
+            value = self.evaluate_board()
+            return (value, None)
 
         min_value = float("inf")
         min_move = None
         for move in possible_moves:
-            temp_board, prev = do_move(board, move[0], move[1])
-            value, useless_move = min_value(board, level + 1)
-            if value <= max_value :
+            prev = self.do_move(move[0], move[1])
+            value, useless_move = self.max_value(level + 1)
+            if value <= min_value :
                 min_value = value
                 min_move = move
-            temp_board = undo_move(board, move[0], move[1], prev)
+            self.undo_move(move[0], move[1], prev)
         return min_value, min_move
 
-    def is_in_bounds(x, y):
-        if x >= 0 and x < 8 and y >= 0 and  y < 8:
-            return True
-        return False
-
-    def evaluate_board(temp_board):
+    def evaluate_board(self):
         total_holes = 0
         total_winning = 0
         total_almost_winning = 0
@@ -176,7 +203,7 @@ class Game:
         start = -1
         end = -1
         advance = 0
-        if self.turn = white:
+        if self.turn == self.white:
             start = 0
             end = 7
             advance = 1
@@ -186,37 +213,37 @@ class Game:
             advance = -1
 
         for i in range (0, 8):
-            if temp_board[i][start] == "-":
+            if self.board[i][start] == "-":
                 total_holes += 1
-            if temp_board[i][start+advance] == "-":
+            if self.board[i][start+advance] == "-":
                 total_holes += 1
 
-            if temp_board[i][end] == self.turn.color:
+            if self.board[i][end] == self.turn.color:
                 total_winning += 1
 
-            if temp_board[i][end-advance] == self.turn.color:
+            if self.board[i][end-advance] == self.turn.color:
                 total_almost_winning += 1
 
             for j in range (0, 8):
-                if temp_board[i][j] == self.turn.color:
+                if self.board[i][j] == self.turn.color:
                     total_dispersion += start + j*advance
-                    if is_in_bounds(i, j+advance) and temp_board[i][j+advance] == "-":
+                    if is_in_bounds(i, j+advance) and self.board[i][j+advance] == "-":
                         total_moves += 1
 
-                    if is_in_bounds(i+1, j+advance) and temp_board[i+1][j+advance] != self.turn.color:
+                    if is_in_bounds(i+1, j+advance) and self.board[i+1][j+advance] != self.turn.color:
                         total_moves += 1
-                        if temp_board[i+1][j+advance] != "-":
-                            total_attacks += 1
+                        if self.board[i+1][j+advance] != "-":
+                            total_attack += 1
 
-                    if is_in_bounds(i-1, j+advance) and temp_board[i-1][j+advance] != self.turn.color:
+                    if is_in_bounds(i-1, j+advance) and self.board[i-1][j+advance] != self.turn.color:
                         total_moves += 1
-                        if temp_board[i-1][j+advance] != "-":
-                            total_attacks += 1
+                        if self.board[i-1][j+advance] != "-":
+                            total_attack += 1
 
-                    if is_in_bounds(i+1, j+advance) and temp_board[i+1][j+advance] == self.turn.color:
+                    if is_in_bounds(i+1, j+advance) and self.board[i+1][j+advance] == self.turn.color:
                         total_defence += 1
 
-                    if is_in_bounds(i-1, j+advance) and temp_board[i-1][j+advance] == self.turn.color:
+                    if is_in_bounds(i-1, j+advance) and self.board[i-1][j+advance] == self.turn.color:
                         total_defence += 1
 
         if self.turn.heuristic == "aggresive":
@@ -245,3 +272,10 @@ class Game:
         heuristic += total_moves * moves_weight
 
         return heuristic
+
+def main():
+    game = Game("minmax", "minmax", "aggresive", "agressive")
+    game.play()
+
+
+if  __name__ =='__main__':main()
