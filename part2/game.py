@@ -40,20 +40,14 @@ class Game:
         while !is_game_over():
             move()
             alternate_turn()
+        print self.board
+        return
 
-    def move():
-        locationA, locationB = choose_best_move()
-        perform_move(locationA, locationB)
+    def move(self):
+        move = minmax_decision()
+        self.board = do_move(self.board, move[0], move[1])
 
-    def generate_possible_moves(temp_board):
-
-    def choose_best_move():
-
-
-    def perform_move(locationA, locationB):
-        self.board.updatePiece(locationA, locationB)
-
-    def alternate_turn():
+    def alternate_turn(self):
         if self.turn == white:
             self.turn = black
             self.opponent = white
@@ -66,7 +60,7 @@ class Game:
             return True
         return False
 
-    def get_possible_boards(temp_board):
+    def get_possible_moves(temp_board):
         start = -1
         end = -1
         advance = 0
@@ -80,72 +74,82 @@ class Game:
             end = 0
             advance = -1
 
-        possible_boards = []
+        possible_moves = []
 
         for i in range (0, 8):
             for j in range (0, 8):
                 if temp_board[i][j] == self.turn.color:
                     if is_in_bounds(i, j + advance) and temp_board[i][j + advance] == "-":
-                        new_board = temp_board
-                        new_board = update_board(new_board, (i, j), (i, j + advance))
                         locationA = (i, j)
                         locationB = (i, j + advance)
-                        possible_boards.append((new_board, locationA, locationB))
+                        possible_moves.append((locationA, locationB))
 
                     if is_in_bounds(i + 1, j + advance) and temp_board[i + 1][j + advance] != self.turn.color:
-                        new_board = temp_board
-                        new_board = update_board(new_board, (i, j), (i, j + advance))
                         locationA = (i, j)
                         locationB = (i + 1, j + advance)
-                        possible_boards.append((new_board, locationA, locationB))
+                        possible_moves.append((locationA, locationB))
 
                     if is_in_bounds(i - 1, j+advance) and temp_board[i - 1][j + advance] != self.turn.color:
-                        new_board = temp_board
-                        new_board = update_board(new_board, (i, j), (i, j + advance))
                         locationA = (i, j)
                         locationB = (i - 1, j + advance)
-                        possible_boards.append((new_board, locationA, locationB))
+                        possible_moves.append((locationA, locationB))
 
-        return possible_boards
+        return possible_moves
 
-    def update_piece(board, locationA, locationB):
+    def do_move(board, locationA, locationB):
+        if board[locationB.first][locationB.second] == "w":
+            self
+        prev = board[locationB.first][locationB.second]
         board[locationB.first][locationB.second] = self.board[locationA.first][locationA.second]
         board[locationA.first][locationA.second] = "-"
+        return (board, prev)
+
+    def undo_move(board, locationA, locationB, prev):
+        board[locationA.first][locationA.second] = board[locationB.first][locationB.second]
+        board[locationB.first][locationB.second] = prev
         return board
 
-    def minmax_decision(temp_board):
-        v = max_value(temp_board, 0)
-        possible_boards = get_possible_boards(temp_board)
-
-        return #TODO how the fuck do you identify the move that had such value
+    def minmax_decision(self):
+        value, move = max_value(self.board, 0)
+        return move
 
     def max_value(temp_board, level):
         if level == 3:
-            return evalute_board(temp_board)
+            return (evalute_board(temp_board), None)
 
-        possible_boards = get_possible_boards(temp_board)
-        if possible_boards is empty:
-            return evalute_board(temp_board)
+        possible_moves = get_possible_moves(temp_board)
+        if possible_moves is empty:
+            return (evalute_board(temp_board), None)
 
-        v = -INFINITE
+        max_value = -float("inf")
+        max_move = None
+        for move in possible_moves:
+            temp_board, prev = do_move(board, move[0], move[1])
+            value, useless_move = min_value(board, level + 1)
+            if value >= max_value :
+                max_value = value
+                max_move = move
+            temp_board = undo_move(board, move[0], move[1], prev)
+        return max_value, max_move
 
-        for board in possible_boards:
-            v = max (v, min_value(board, level + 1))
-        return v
-
-    def max_value(temp_board, level):
+    def min_value(temp_board, level):
         if level == 3:
-            return evalute_board(temp_board)
+            return (evalute_board(temp_board), None)
 
-        possible_boards = get_possible_boards(temp_board)
-        if possible_boards is empty:
-            return evalute_board(temp_board)
+        possible_moves = get_possible_moves(temp_board)
+        if possible_moves is empty:
+            return (evalute_board(temp_board), None)
 
-        v = -INFINITE #TODO
-
-        for board in possible_boards:
-            v = min(v, max_value(board, level + 1))
-        return v
+        min_value = float("inf")
+        min_move = None
+        for move in possible_moves:
+            temp_board, prev = do_move(board, move[0], move[1])
+            value, useless_move = min_value(board, level + 1)
+            if value <= max_value :
+                min_value = value
+                min_move = move
+            temp_board = undo_move(board, move[0], move[1], prev)
+        return min_value, min_move
 
     def is_in_bounds(x, y):
         if x >= 0 and x < 8 and y >= 0 and  y < 8:
