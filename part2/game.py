@@ -1,3 +1,5 @@
+import time
+
 def is_in_bounds(x, y):
     if x >= 0 and x < 8 and y >= 0 and  y < 8:
         return True
@@ -43,11 +45,14 @@ class Game:
 
     def play(self):
         count = 0
-        while not self.is_game_over() or count < 10:
+        while not self.is_game_over() and count < 1000:
             self.move()
             self.alternate_turn()
-            self.print_game()
             count += 1
+            print count
+            # self.print_game()
+            # time.sleep(2)
+        self.print_game()
         return
 
     def print_game(self):
@@ -55,9 +60,9 @@ class Game:
         for i in range (0, 8):
             for j in range (0, 8):
                 board += self.board[i][j] + "|"
-            board +=  "\n"
-            board += "_ _ _ _ _ _ _ _"
             board += "\n"
+
+        board + "\n\n"
         print board
 
     def move(self):
