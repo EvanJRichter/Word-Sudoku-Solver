@@ -88,17 +88,23 @@ class Game:
                     if is_in_bounds(i, j + advance) and temp_board[i][j + advance] == "-":
                         new_board = temp_board
                         new_board = update_board(new_board, (i, j), (i, j + advance))
-                        possible_boards.append(new_board)
+                        locationA = (i, j)
+                        locationB = (i, j + advance)
+                        possible_boards.append((new_board, locationA, locationB))
 
                     if is_in_bounds(i + 1, j + advance) and temp_board[i + 1][j + advance] != self.turn.color:
                         new_board = temp_board
                         new_board = update_board(new_board, (i, j), (i, j + advance))
-                        possible_boards.append(new_board)
+                        locationA = (i, j)
+                        locationB = (i + 1, j + advance)
+                        possible_boards.append((new_board, locationA, locationB))
 
                     if is_in_bounds(i - 1, j+advance) and temp_board[i - 1][j + advance] != self.turn.color:
                         new_board = temp_board
                         new_board = update_board(new_board, (i, j), (i, j + advance))
-                        possible_boards.append(new_board)
+                        locationA = (i, j)
+                        locationB = (i - 1, j + advance)
+                        possible_boards.append((new_board, locationA, locationB))
 
         return possible_boards
 
