@@ -1,4 +1,4 @@
-import time
+import time, random
 
 def is_in_bounds(x, y):
     if x >= 0 and x < 8 and y >= 0 and  y < 8:
@@ -49,7 +49,7 @@ class Game:
             self.move()
             self.alternate_turn()
             count += 1
-            print count
+            # print count
             # self.print_game()
             # time.sleep(2)
         self.print_game()
@@ -66,8 +66,16 @@ class Game:
         print board
 
     def move(self):
-        move = self.minmax_decision()
+        move = self.find_move()
         self.do_move(move[0], move[1])
+
+    def find_move(self):
+        if self.turn.strategy == "minmax":
+            return self.minmax_decision()
+        if self.turn.strategy == "alphabeta":
+            return self.alpha_beta_search()
+        if self.turn.strategy == "random":
+            return self.random_decision()
 
     def alternate_turn(self):
         if self.turn == self.white:
@@ -79,7 +87,11 @@ class Game:
 
     def touchdown(self):
         for i in range (0, 8):
-            if self.board[i][0] == "b" or self.board[i][7] == "w":
+            if self.board[i][0] == "b":
+                print "Black won"
+                return True
+            if self.board[i][7] == "w":
+                print "White won"
                 return True
         return False
 
@@ -142,6 +154,11 @@ class Game:
         self.board[locationA[0]][locationA[1]] = self.board[locationB[0]][locationB[1]]
         self.board[locationB[0]][locationB[1]] = prev
 
+    def random_decision(self):
+        possible_moves = self.get_possible_moves()
+        index = random.randint(0, len(possible_moves)-1)
+        return possible_moves[index]
+
     def minmax_decision(self):
         value, move = self.max_value(0)
         return move
@@ -186,6 +203,66 @@ class Game:
                 min_value = value
                 min_move = move
             self.undo_move(move[0], move[1], prev)
+        return min_value, min_move
+
+    def alpha_beta_search(self):
+        value, move = self.ab_max_value(0, -float("inf"), float("inf") )
+        return move
+
+    def ab_max_value(self, level, alpha, beta):
+        if level == 5:
+            value = self.evaluate_board()
+            return (value, None)
+
+        possible_moves = self.get_possible_moves()
+        if not possible_moves:
+            value = self.evaluate_board()
+            return (value, None)
+
+        max_value = -float("inf")
+        max_move = None
+        for move in possible_moves:
+            prev = self.do_move(move[0], move[1])
+            # v = MAX (v, min_value())
+            value, useless_move = self.ab_min_value(level + 1, alpha, beta)
+            self.undo_move(move[0], move[1], prev)
+            if value >= max_value:
+                max_value = value
+                max_move = move
+            # if v >= b return v
+            if value >= beta:
+                return value, move
+            # a = max(v, a)
+            if value >= alpha:
+                alpha = value
+        return max_value, max_move
+
+    def ab_min_value(self, level, alpha, beta):
+        if level == 5:
+            value = self.evaluate_board()
+            return (value, None)
+
+        possible_moves = self.get_possible_moves()
+        if not possible_moves:
+            value = self.evaluate_board()
+            return (value, None)
+
+        min_value = float("inf")
+        min_move = None
+        for move in possible_moves:
+            prev = self.do_move(move[0], move[1])
+            # v = MIN (v, max_value())
+            value, useless_move = self.ab_max_value(level + 1, alpha, beta)
+            self.undo_move(move[0], move[1], prev)
+            if value <= min_value :
+                min_value = value
+                min_move = move
+            # if v <= a return v
+            if value <= alpha:
+                return value, move
+            # a = max(v, a)
+            if value <= beta:
+                beta = value
         return min_value, min_move
 
     def evaluate_board(self):
@@ -259,7 +336,7 @@ class Game:
             defence_weight = 5 # Defensive
             moves_weight = 5 # Equal
             dispersion_weight = 10 # Aggresive
-        else:
+        if self.turn.heuristic == "defensive":
             holes_weight = -10
             winning_weight = 5
             almost_winning_weight = 5
@@ -279,7 +356,31 @@ class Game:
         return heuristic
 
 def main():
-    game = Game("minmax", "minmax", "aggresive", "agressive")
+    print "Test 1"
+    game = Game("minmax", "random", "aggresive", None)
+    game.play()
+    print "Test 2"
+    game = Game("alphabeta", "random", "aggresive", None)
+    game.play()
+    print "Test 3"
+    game = Game("minmax", "random", "defensive", None)
+    game.play()
+    print "Test 4"
+    game = Game("alphabeta", "random", "defensive", None)
+    game.play()
+
+
+    print "Game 1"
+    game = Game("minmax", "minmax", "aggresive", "defensive")
+    game.play()
+    print "Game 2"
+    game = Game("alphabeta", "alphabeta", "defensive", "agressive")
+    game.play()
+    print "Game 3"
+    game = Game("minmax", "alphabeta", "aggresive", "agressive")
+    game.play()
+    print "Game 4"
+    game = Game("alphabeta", "minmax", "defensive", "defensive")
     game.play()
 
 
