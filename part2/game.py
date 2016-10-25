@@ -17,6 +17,9 @@ class Player:
         self.strategy = strategy
         self.heuristic = heuristic
         self.count = 16
+        self.expanded_nodes = 0
+        self.total_time = 0
+        self.total_moves = 0
 
 class Game:
     # self.board = None
@@ -44,6 +47,18 @@ class Game:
         self.opponent = self.black
 
     def play(self):
+        print "--------------GAME STARTING--------------"
+
+        print "\nWhite Team"
+        print "Strategy:" , self.white.strategy
+        print "Heuristic:" , self.white.heuristic
+
+        print "\nBlack Team"
+        print "Strategy:" , self.black.strategy
+        print "Heuristic:" , self.black.heuristic
+
+        print "\nStarting Team: white"
+
         count = 0
         while not self.is_game_over() and count < 1000:
             self.move()
@@ -52,7 +67,25 @@ class Game:
             # print count
             # self.print_game()
             # time.sleep(2)
+
+        print "\n1. Final board position:"
         self.print_game()
+
+        print "\n2. Total nodes expanded:"
+        print "White team:", self.white.expanded_nodes
+        print "Black team:", self.black.expanded_nodes
+
+        print "\n3. Average statistics per move:"
+        print "White team average number of nodes expanded per move:", self.white.expanded_nodes / self.white.total_moves
+        print "Black team average number of nodes expanded per move:", self.black.expanded_nodes / self.black.total_moves
+        print "White team average time to make a move:", self.white.total_time / self.white.total_moves
+        print "Black team average time to make a move:", self.black.total_time / self.black.total_moves
+
+        print "\n4. Satistics per player:"
+        print "White team captured:", 16 - self.black.count
+        print "Black team captured:", 16 - self.white.count
+        print "Total moves until end:", self.white.total_moves + self.black.total_moves
+
         return
 
     def print_game(self):
@@ -66,8 +99,13 @@ class Game:
         print board
 
     def move(self):
+        start_time = time.time()
         move = self.find_move()
         self.do_move(move[0], move[1])
+        runtime = (time.time() - start_time)
+
+        self.turn.total_time += runtime
+        self.turn.total_moves += 1
 
     def find_move(self):
         if self.turn.strategy == "minmax":
@@ -88,10 +126,10 @@ class Game:
     def touchdown(self):
         for i in range (0, 8):
             if self.board[i][0] == "b":
-                print "Black won"
+                print "\nBlack Team won"
                 return True
             if self.board[i][7] == "w":
-                print "White won"
+                print "\nWhite Team won"
                 return True
         return False
 
@@ -175,7 +213,9 @@ class Game:
 
         max_value = -float("inf")
         max_move = None
+        expanded_nodes = 0
         for move in possible_moves:
+            self.turn.expanded_nodes += 1
             prev = self.do_move(move[0], move[1])
             value, useless_move = self.min_value(level + 1)
             if value >= max_value :
@@ -197,6 +237,7 @@ class Game:
         min_value = float("inf")
         min_move = None
         for move in possible_moves:
+            self.turn.expanded_nodes += 1
             prev = self.do_move(move[0], move[1])
             value, useless_move = self.max_value(level + 1)
             if value <= min_value :
@@ -222,6 +263,7 @@ class Game:
         max_value = -float("inf")
         max_move = None
         for move in possible_moves:
+            self.turn.expanded_nodes += 1
             prev = self.do_move(move[0], move[1])
             # v = MAX (v, min_value())
             value, useless_move = self.ab_min_value(level + 1, alpha, beta)
@@ -250,6 +292,7 @@ class Game:
         min_value = float("inf")
         min_move = None
         for move in possible_moves:
+            self.turn.expanded_nodes += 1
             prev = self.do_move(move[0], move[1])
             # v = MIN (v, max_value())
             value, useless_move = self.ab_max_value(level + 1, alpha, beta)
@@ -266,6 +309,16 @@ class Game:
         return min_value, min_move
 
     def evaluate_board(self):
+        turn = self.get_points(self.turn)
+        opponent = self.get_points(self.opponent)
+
+        if self.turn.heuristic == "aggresive":
+            return 2 * turn - opponent
+        if self.turn.heuristic == "defensive":
+            return turn - 2 * opponent
+
+
+    def get_points(self, team):
         total_holes = 0
         total_winning = 0
         total_almost_winning = 0
@@ -274,18 +327,18 @@ class Game:
         total_moves = 0
         total_dispersion = 0
 
-        holes_weight = 0
-        winning_weight = 0
-        almost_winning_weight = 0
-        attack_weight = 0
-        defence_weight = 0
-        moves_weight = 0
-        dispersion_weight = 0
+        holes_weight = -5
+        winning_weight = 20
+        almost_winning_weight = 10
+        attack_weight = 10
+        defence_weight = 5
+        moves_weight = 10
+        dispersion_weight = 5
 
         start = -1
         end = -1
         advance = 0
-        if self.turn == self.white:
+        if team == self.white:
             start = 0
             end = 7
             advance = 1
@@ -300,50 +353,33 @@ class Game:
             if self.board[i][start+advance] == "-":
                 total_holes += 1
 
-            if self.board[i][end] == self.turn.color:
+            if self.board[i][end] == team.color:
                 total_winning += 1
 
-            if self.board[i][end-advance] == self.turn.color:
+            if self.board[i][end-advance] == team.color:
                 total_almost_winning += 1
 
             for j in range (0, 8):
-                if self.board[i][j] == self.turn.color:
+                if self.board[i][j] == team.color:
                     total_dispersion += start + j*advance
                     if is_in_bounds(i, j+advance) and self.board[i][j+advance] == "-":
                         total_moves += 1
 
-                    if is_in_bounds(i+1, j+advance) and self.board[i+1][j+advance] != self.turn.color:
+                    if is_in_bounds(i+1, j+advance) and self.board[i+1][j+advance] != team.color:
                         total_moves += 1
                         if self.board[i+1][j+advance] != "-":
                             total_attack += 1
 
-                    if is_in_bounds(i-1, j+advance) and self.board[i-1][j+advance] != self.turn.color:
+                    if is_in_bounds(i-1, j+advance) and self.board[i-1][j+advance] != team.color:
                         total_moves += 1
                         if self.board[i-1][j+advance] != "-":
                             total_attack += 1
 
-                    if is_in_bounds(i+1, j+advance) and self.board[i+1][j+advance] == self.turn.color:
+                    if is_in_bounds(i+1, j+advance) and self.board[i+1][j+advance] == team.color:
                         total_defence += 1
 
-                    if is_in_bounds(i-1, j+advance) and self.board[i-1][j+advance] == self.turn.color:
+                    if is_in_bounds(i-1, j+advance) and self.board[i-1][j+advance] == team.color:
                         total_defence += 1
-
-        if self.turn.heuristic == "aggresive":
-            holes_weight = 0 # Defensive
-            winning_weight = 20 # Aggresive
-            almost_winning_weight = 10 # Aggresive
-            attack_weight = 10 # Aggresive
-            defence_weight = 5 # Defensive
-            moves_weight = 5 # Equal
-            dispersion_weight = 10 # Aggresive
-        if self.turn.heuristic == "defensive":
-            holes_weight = -10
-            winning_weight = 5
-            almost_winning_weight = 5
-            attack_weight = 5
-            defence_weight = 20
-            moves_weight = 5
-            dispersion_weight = -10
 
 
         heuristic = total_holes * holes_weight
@@ -356,18 +392,18 @@ class Game:
         return heuristic
 
 def main():
-    print "Test 1"
-    game = Game("minmax", "random", "aggresive", None)
-    game.play()
-    print "Test 2"
-    game = Game("alphabeta", "random", "aggresive", None)
-    game.play()
-    print "Test 3"
-    game = Game("minmax", "random", "defensive", None)
-    game.play()
-    print "Test 4"
-    game = Game("alphabeta", "random", "defensive", None)
-    game.play()
+    # print "Test 1"
+    # game = Game("minmax", "random", "aggresive", "none")
+    # game.play()
+    # print "Test 2"
+    # game = Game("alphabeta", "random", "aggresive", "none")
+    # game.play()
+    # print "Test 3"
+    # game = Game("minmax", "random", "defensive", "none")
+    # game.play()
+    # print "Test 4"
+    # game = Game("alphabeta", "random", "defensive", "none")
+    # game.play()
 
 
     print "Game 1"
